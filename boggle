@@ -1,0 +1,107 @@
+#!/usr/bin/env python3
+
+# A simple Boggle program using Tkinter. Press any key to reset the game.
+
+import tkinter as tk
+from tkinter import ttk
+import random
+import time
+
+
+
+
+
+# Letters on the dice
+DICE = [
+    "R I F O B X",  "I F E H E Y", "D E N O W S", "U T O K N D",
+    "H M S R A O",  "L U P E T S", "A C I T O A", "Y L G K U E",
+    "Qu B M J O A", "E H I S P N", "V E T I G N", "B A L I Y T",
+    "E Z A V N D",  "R A L E S C", "U W I L R G", "P A C E M D"
+]
+
+
+
+
+
+# Global constants
+GRID_SIZE = 4
+TIME_LIMIT = 180
+
+
+
+
+
+class BoggleGame:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("Press any key to reset")
+
+        # Progress bar
+        self.progress_frame = tk.Frame(root)
+        self.progress_frame.pack(pady=10)
+        self.progress = ttk.Progressbar(self.progress_frame, orient="horizontal", length=600, mode="determinate")
+        self.progress.pack(pady=5)
+
+        # Main board frame
+        self.grid_frame = tk.Frame(root)
+        self.grid_frame.pack(pady=10)
+        self.labels = [[None for _ in range(GRID_SIZE)] for _ in range(GRID_SIZE)]
+
+        # Any key resets the game
+        self.root.bind("<Key>", self.reset_game)
+
+        # Start the game
+        self.game_id = 0
+        self.reset_game()
+
+
+
+    # Create the grid, shuffling dice and taking one letter (or "Qu") from each
+    def generate_grid(self):
+        random.shuffle(DICE)
+        for i in range(GRID_SIZE):
+            for j in range(GRID_SIZE):
+                letter = random.choice(DICE[i*GRID_SIZE+j].split(" "))
+                label = tk.Label(self.grid_frame, text=letter, font=("Helvetica", 100), width=3, height=1, borderwidth=0, padx=10, pady=10, relief="solid")
+                label.grid(row=i, column=j, padx=0, pady=50, sticky="nsew")
+                self.labels[i][j] = label
+
+
+
+    # Update the progress bar and recurse, returning from the recursion if a new game has been started
+    def update_progress_bar(self, game_id):
+        if game_id != self.game_id:
+            return
+        elif self.time_left > 0:
+            self.time_left -= 1
+            self.progress['value'] = ((TIME_LIMIT - self.time_left) / TIME_LIMIT) * 100
+            self.root.after(1000, lambda: self.update_progress_bar(game_id))
+        else:
+            self.end_game()
+
+
+    # When the timer runs out, turn the letters red
+    def end_game(self):
+        for row in self.labels:
+            for label in row:
+                label.config(fg="red")
+
+
+
+    # Restart the game: reset the timer, make a new game ID, and refresh the grid
+    def reset_game(self, event=None):
+        self.time_left = TIME_LIMIT
+        self.game_id=random.randint(1, 9999999999)
+        self.progress['value'] = 0
+        self.generate_grid()
+        self.update_progress_bar(self.game_id)
+
+
+
+
+
+# Run Boggle
+if __name__ == "__main__":
+    root = tk.Tk()
+    game = BoggleGame(root)
+    root.mainloop()
